@@ -1,7 +1,6 @@
 import discord
-import os
-import TJ_DBConnection 
-import User
+import TJ_DBConnection, DAO, Admin
+from datetime import datetime
 from discord.ext import commands
 from discord.ext.commands.errors import CommandInvokeError
 from discord.ext.commands import CommandNotFound
@@ -24,11 +23,10 @@ intents.guilds = True
 
 client = discord.Client(intents=intents)
 
-
 bot = commands.Bot(command_prefix = '$ ', intents=intents)
 
-TJ_DBConnection.DBConnection.dbconn()
-# TJ_DBConnection.DBConnection.getAllUser()
+db = TJ_DBConnection.dbconn()
+db
 
 @client.event
 async def on_ready():
@@ -43,28 +41,61 @@ async def on_message(message):
     user = message.author
     channel = message.channel
     guild = channel.guild
+    current_time = "%s-%s-%s %s:%s:%s" % (
+                    datetime.now().year, 
+                    datetime.now().month, 
+                    datetime.now().day, 
+                    datetime.now().hour, 
+                    datetime.now().minute, 
+                    datetime.now().second
+                )
+    print("channel", channel)
+    print("guild", guild)
+    # current_timezone_time = message.author.joined_at
+    # new_timezone_time = current_timezone_time.astimezone(timezone('Asia/Seoul'))
 
-    current_timezone_time = message.author.joined_at
-    new_timezone_time = current_timezone_time.astimezone(timezone('Asia/Seoul'))
-    print(new_timezone_time)
-    print(User.getUser(user))
-    if user == client.user:
+    # Bot이 아닌 경우 실행
+    if user.id != client.user.id:
+        if content.startswith('hello'):
+            await channel.send("Hello! "+str(user))
+
+        elif content == "$user":
+            member_num = 0
+            to_send_users = f'서버명 [{guild.name}]: 멤버 [{guild.member_count}명]\n\n'
+            for member in guild.members:
+                member_num += 1
+                to_send_users += f'{member_num}. {member}\n'
+            await channel.send(to_send_users)
+        
+        elif content == "$채팅기록":
+            chat_log = f'{user} | {content}'
+            await channel.send(chat_log)
+        
+        else:
+            if len(DAO.Chat.selectIDChat(user.id, channel.id)) == 0:
+                DAO.Chat.insertChat(user.id, channel.id, current_time)
+            else:
+                DAO.Chat.updateChat(current_time, user.id, channel.id)
+
+
+    else:
+        print("this is bot")
         return
 
-    elif content.startswith('hello'):
-        await channel.send("Hello! "+str(user))
+@client.event
+async def on_voice_state_update(member, before, after):
 
-    elif content == "$user":
-        member_num = 0
-        to_send_users = f'서버명 [{guild.name}]: 멤버 [{guild.member_count}명]\n\n'
-        for member in guild.members:
-            member_num += 1
-            to_send_users += f'{member_num}. {member}\n'
-        await channel.send(to_send_users)
-    
-    elif content == "$채팅기록":
-        chat_log = f'{user} | {content}'
-        await channel.send(chat_log)
+    current_time = "%s-%s-%s %s:%s:%s" % (
+                    datetime.now().year, 
+                    datetime.now().month, 
+                    datetime.now().day, 
+                    datetime.now().hour, 
+                    datetime.now().minute, 
+                    datetime.now().second
+                )
+
+    print(member, before, after)
+    print(current_time)
 
 client.run(discord_token)
 
