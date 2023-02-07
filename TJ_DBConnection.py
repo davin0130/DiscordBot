@@ -10,28 +10,33 @@ username = "root"
 password = "1234"
 
 # Discord Bot Connection
-class DBConnection:
-    def dbconn():
-        conn = pymysql.connect(
-            host=host,
-            user=username,
-            passwd=password,
-            db=database,
-            port=port,
-            use_unicode=True,
-            charset='utf8'
-        )
-        cursor = conn.cursor()
-        result = cursor.execute(get_all_user_sql)
-        conn.commit()
-        
-        print(conn, cursor, result)
-        return conn, cursor, result
+def dbconn():
+    conn = pymysql.connect(
+        host=host,
+        user=username,
+        passwd=password,
+        db=database,
+        port=port,
+        use_unicode=True,
+        charset='utf8'
+    )
+    cursor = conn.cursor()
+    result = cursor.execute(get_all_user_sql)
+    conn.commit()
+    
+    return conn, cursor, result
 
-    def dbclose():
-        cursor.close()
-        conn.close()
+conn, cursor, result = dbconn()
 
+def dbclose():
+    cursor.close()
+    conn.close()
+
+
+
+# print(conn)
+# print(cursor)
+# print(result)
 
 
 
